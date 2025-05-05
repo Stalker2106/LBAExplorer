@@ -36,6 +36,7 @@ func _ready() -> void:
     tree.hide_root = true;
     tree.connect("item_selected", Callable(self, "tree_select"));
     get_node("Layout/MenuBar/File").connect("id_pressed", Callable(self, "file_menu"));
+    get_node("Layout/MenuBar/About").connect("id_pressed", Callable(self, "about_menu"));
     get_node("OpenFileDialog").connect("file_selected", Callable(self, "load_package"));
     get_node("OpenFileDialog").connect("files_selected", Callable(self, "load_multiple"));
     #Load
@@ -47,6 +48,10 @@ func _ready() -> void:
 func file_menu(idx: int):
     if idx == 0:
         get_node("OpenFileDialog").visible = true;
+
+func about_menu(idx: int):
+    if idx == 0:
+        get_node("AboutDialog").visible = true;
 
 func load_multiple(files: Array[String]):
     for file in files:

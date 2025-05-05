@@ -88,7 +88,7 @@ script = ExtResource("2_oxmao")
 [node name="Viewport" type="SubViewport" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D"]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(940, 303)
+size = Vector2i(1708, 519)
 render_target_update_mode = 0
 
 [node name="Camera" type="Camera2D" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D/Viewport"]
@@ -158,3 +158,17 @@ ok_button_text = "Open"
 file_mode = 1
 access = 2
 filters = PackedStringArray("*.HQR, *.ILE, *.OBL")
+
+[node name="AboutDialog" type="AcceptDialog" parent="."]
+title = "About"
+initial_position = 2
+size = Vector2i(500, 468)
+ok_button_text = "Got it!"
+dialog_text = "LBAExplorer v1.0.0
+Made with Godot by Stalker2106
+
+This software widely uses the work of many projects from https://github.com/LBALab and the work of many people from the discord community.
+Big thanks to all of them, especially members of the Magicball network, who have made the reverse engineering of the game possible.
+
+This is a fan-made tool and is not affiliated with Adeline Software or the current rights holders of Little Big Adventure. All trademarks and content belong to their respective owners."
+dialog_autowrap = true
