@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3 uid="uid://iaw32dpw2iyp"]
+
+[ext_resource type="FontFile" uid="uid://ce6qokllaxd2p" path="res://assets/courrier.ttf" id="1_5ym66"]
+
+[node name="Content" type="HBoxContainer"]
+offset_right = 1039.0
+offset_bottom = 19.0
+size_flags_horizontal = 3
+
+[node name="Address" type="Label" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_5ym66")
+text = "Address"
+
+[node name="Data" type="Label" parent="."]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_5ym66")
+text = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+
+[node name="Decoded" type="Label" parent="."]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_5ym66")
+text = "Decoded text"

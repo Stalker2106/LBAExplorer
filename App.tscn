@@ -1,0 +1,160 @@
+[gd_scene load_steps=9 format=3 uid="uid://bkifwkmqhb5t8"]
+
+[ext_resource type="Theme" uid="uid://dgq2dupqt6jyl" path="res://assets/LBA.tres" id="1_2dwpa"]
+[ext_resource type="Script" uid="uid://pjtycjx1kkgm" path="res://app.gd" id="1_oaicl"]
+[ext_resource type="Script" uid="uid://b2ocais52frs5" path="res://viewers/viewport2d.gd" id="2_oxmao"]
+[ext_resource type="Script" uid="uid://dkkn7v8c3veer" path="res://viewers/viewport3d.gd" id="3_e1rpr"]
+[ext_resource type="Texture2D" uid="uid://dwxxhnsi40twr" path="res://assets/palette.png" id="4_2dwpa"]
+[ext_resource type="Script" uid="uid://clt6n5j1y2jsy" path="res://viewers/hex_viewer.gd" id="4_la6et"]
+
+[sub_resource type="Environment" id="Environment_oxmao"]
+background_mode = 1
+background_color = Color(0.122252, 0.122252, 0.122252, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_oxmao"]
+
+[node name="App" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_2dwpa")
+script = ExtResource("1_oaicl")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuBar" type="MenuBar" parent="Layout"]
+layout_mode = 2
+
+[node name="File" type="PopupMenu" parent="Layout/MenuBar"]
+item_count = 1
+item_0/text = "Open..."
+item_0/id = 0
+
+[node name="About" type="PopupMenu" parent="Layout/MenuBar"]
+auto_translate_mode = 1
+item_count = 1
+item_0/text = "?"
+item_0/id = 0
+
+[node name="MainContainer" type="HSplitContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Layout/MainContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Tree" type="Tree" parent="Layout/MainContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_root = true
+select_mode = 1
+
+[node name="Label" type="Label" parent="Layout/MainContainer/VBoxContainer"]
+layout_mode = 2
+text = "0 package(s) loaded"
+horizontal_alignment = 1
+
+[node name="Entry" type="VSplitContainer" parent="Layout/MainContainer"]
+layout_mode = 2
+
+[node name="ColorRect" type="ColorRect" parent="Layout/MainContainer/Entry"]
+layout_mode = 2
+size_flags_vertical = 3
+color = Color(0.122252, 0.122252, 0.122252, 1)
+
+[node name="SubViewport2D" type="SubViewportContainer" parent="Layout/MainContainer/Entry/ColorRect"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+script = ExtResource("2_oxmao")
+
+[node name="Viewport" type="SubViewport" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D"]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(940, 303)
+render_target_update_mode = 0
+
+[node name="Camera" type="Camera2D" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D/Viewport"]
+
+[node name="Preview" type="Sprite2D" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D/Viewport"]
+texture_filter = 1
+
+[node name="CanvasLayer" type="CanvasLayer" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D/Viewport"]
+
+[node name="PaletteButton" type="Button" parent="Layout/MainContainer/Entry/ColorRect/SubViewport2D/Viewport/CanvasLayer"]
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Set as current palette"
+icon = ExtResource("4_2dwpa")
+
+[node name="SubViewport3D" type="SubViewportContainer" parent="Layout/MainContainer/Entry/ColorRect"]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("3_e1rpr")
+
+[node name="Viewport" type="SubViewport" parent="Layout/MainContainer/Entry/ColorRect/SubViewport3D"]
+handle_input_locally = false
+size = Vector2i(940, 300)
+render_target_update_mode = 0
+
+[node name="Camera" type="Camera3D" parent="Layout/MainContainer/Entry/ColorRect/SubViewport3D/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.26146)
+environment = SubResource("Environment_oxmao")
+
+[node name="Preview" type="MeshInstance3D" parent="Layout/MainContainer/Entry/ColorRect/SubViewport3D/Viewport"]
+mesh = SubResource("SphereMesh_oxmao")
+skeleton = NodePath("../../../SubViewport2D/Viewport")
+
+[node name="HexViewer" type="ScrollContainer" parent="Layout/MainContainer/Entry/ColorRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_la6et")
+
+[node name="Layout" type="VBoxContainer" parent="Layout/MainContainer/Entry/ColorRect/HexViewer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Panel" type="Panel" parent="Layout/MainContainer/Entry"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Details" type="RichTextLabel" parent="Layout/MainContainer/Entry/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OpenFileDialog" type="FileDialog" parent="."]
+title = "Open File(s)"
+initial_position = 2
+force_native = true
+ok_button_text = "Open"
+file_mode = 1
+access = 2
+filters = PackedStringArray("*.HQR, *.ILE, *.OBL")
