@@ -1,7 +1,6 @@
 # LBAExplorer
 
-![App2D](media/app2d.png)
-![App3D](media/app3d.png)
+![App preview](media/preview.png)
 
 **LBAExplorer** is a tool for browsing game package files from *Little Big Adventure 1 & 2* (classic editions).
 
