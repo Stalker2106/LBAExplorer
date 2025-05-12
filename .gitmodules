@@ -1,0 +1,3 @@
+[submodule "metadata"]
+	path = metadata
+	url = git@github.com:LBALab/metadata.git

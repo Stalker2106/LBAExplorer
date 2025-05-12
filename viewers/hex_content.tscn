@@ -1,26 +1,58 @@
-[gd_scene load_steps=2 format=3 uid="uid://iaw32dpw2iyp"]
+[gd_scene load_steps=11 format=3 uid="uid://iaw32dpw2iyp"]
 
 [ext_resource type="FontFile" uid="uid://ce6qokllaxd2p" path="res://assets/courrier.ttf" id="1_5ym66"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5ym66"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mgk2t"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_l6d2b"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vqufh"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_pom2a"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_equp7"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qt7a5"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_o8up1"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qhaja"]
 
 [node name="Content" type="HBoxContainer"]
 offset_right = 1039.0
 offset_bottom = 19.0
 size_flags_horizontal = 3
 
-[node name="Address" type="Label" parent="."]
+[node name="Address" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_5ym66")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_5ym66")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_mgk2t")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_l6d2b")
 text = "Address"
+editable = false
+emoji_menu_enabled = false
+middle_mouse_paste_enabled = false
 
-[node name="Data" type="Label" parent="."]
+[node name="Data" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_5ym66")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_vqufh")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_pom2a")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_equp7")
 text = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+editable = false
 
-[node name="Decoded" type="Label" parent="."]
+[node name="Decoded" type="LineEdit" parent="."]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_5ym66")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_qt7a5")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_o8up1")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_qhaja")
 text = "Decoded text"
+editable = false

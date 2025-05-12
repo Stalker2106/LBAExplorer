@@ -1,6 +1,7 @@
 # LBAExplorer
 
-![App](media/app.png)
+![App2D](media/app2d.png)
+![App3D](media/app3d.png)
 
 **LBAExplorer** is a tool for browsing game package files from *Little Big Adventure 1 & 2* (classic editions).
 
@@ -10,22 +11,30 @@
 
 ## Features
 
-📦 **Opens all proprietary formats**:
+📦 **Opens LBA1 & LBA2 archive formats**:
+ All extensions share the same file type, only the content differs
   - `.HQR` Main game archives containing multiple resources
   - `.ILE` Level and scene data       
   - `.OBL` 3D models and animations
 
 👁️ **Built-in viewers**:
   - **2D Viewer**: for sprites and images.
+    - Support for palette mapping from any source
+    - Export any texture to png
   - **3D Viewer**: for models and animations.
+    - Export any model to glb/gltf
+    - 🚧LBA1 models are not supported yet
+    - 🚧Animations are not supported yet
+    - 🚧Texture mapping is not supported yet
+    - 🚧Skeleton rigging is not supported yet
   - **Hex Viewer**: for raw data, text files, or unknown content.
+    - Export any data to an external file
 
-No need to export files — everything can be viewed inside the software.
 
 ## Compatibility
 
 - Supports *Little Big Adventure 1 & 2* (original DOS/Windows versions).
-- Not compatible with remastered or mobile editions.
+- Not compatible with 2.21 remastered editions.
 
 ## Installation
 

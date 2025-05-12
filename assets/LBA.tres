@@ -1,11 +1,32 @@
-[gd_resource type="Theme" load_steps=29 format=4 uid="uid://dgq2dupqt6jyl"]
+[gd_resource type="Theme" load_steps=36 format=4 uid="uid://dgq2dupqt6jyl"]
 
 [ext_resource type="FontFile" uid="uid://dy1rai3q8cwy0" path="res://assets/rudi-semi-bold.otf" id="1_xwsau"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_24yp8"]
+bg_color = Color(0.0705882, 0.141176, 0.160784, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ra76y"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q1nxv"]
 bg_color = Color(0.0862745, 0.113725, 0.121569, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jemug"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+bg_color = Color(1, 1, 1, 0.360784)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yyf5f"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+bg_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_asaj0"]
+content_margin_left = 10.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+bg_color = Color(0, 0, 0, 0.588235)
 
 [sub_resource type="Image" id="Image_xwsau"]
 data = {
@@ -1169,6 +1190,13 @@ data = {
 [sub_resource type="ImageTexture" id="ImageTexture_x0ss0"]
 image = SubResource("Image_woru5")
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yyf5f"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jemug"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ssjqr"]
+bg_color = Color(0.0431373, 0.054902, 0.0588235, 1)
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xwsau"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xwsau"]
@@ -1197,12 +1225,16 @@ expand_margin_right = 4.0
 expand_margin_bottom = 4.0
 
 [resource]
+AcceptDialog/styles/panel = SubResource("StyleBoxFlat_24yp8")
 Button/fonts/font = ExtResource("1_xwsau")
 Button/styles/focus = SubResource("StyleBoxEmpty_ra76y")
 FileDialog/styles/panel = SubResource("StyleBoxFlat_q1nxv")
 Label/fonts/font = ExtResource("1_xwsau")
 LineEdit/fonts/font = ExtResource("1_xwsau")
 MenuBar/fonts/font = ExtResource("1_xwsau")
+MenuBar/styles/hover = SubResource("StyleBoxFlat_jemug")
+MenuBar/styles/normal = SubResource("StyleBoxFlat_yyf5f")
+MenuBar/styles/pressed = SubResource("StyleBoxFlat_asaj0")
 PopupMenu/colors/font_accelerator_color = Color(0.7, 0.7, 0.7, 0.8)
 PopupMenu/colors/font_color = Color(0.875, 0.875, 0.875, 1)
 PopupMenu/colors/font_disabled_color = Color(0.4, 0.4, 0.4, 0.8)
@@ -1233,6 +1265,14 @@ PopupMenu/icons/submenu_mirrored = SubResource("ImageTexture_en14q")
 PopupMenu/icons/unchecked = SubResource("ImageTexture_8hvw6")
 PopupMenu/icons/unchecked_disabled = SubResource("ImageTexture_x0ss0")
 RichTextLabel/fonts/normal_font = ExtResource("1_xwsau")
+TabBar/styles/tab_focus = SubResource("StyleBoxEmpty_yyf5f")
+TabContainer/constants/side_margin = 0
+TabContainer/styles/tab_focus = SubResource("StyleBoxEmpty_jemug")
+TabContainer/styles/tabbar_background = SubResource("StyleBoxFlat_ssjqr")
+Tree/constants/h_separation = 2
+Tree/constants/inner_item_margin_bottom = 8
+Tree/constants/inner_item_margin_top = 8
+Tree/constants/item_margin = 10
 Tree/fonts/font = ExtResource("1_xwsau")
 Tree/fonts/title_button_font = ExtResource("1_xwsau")
 Tree/styles/focus = SubResource("StyleBoxEmpty_xwsau")

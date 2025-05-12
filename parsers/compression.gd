@@ -1,9 +1,10 @@
 extends Node
 
-# Compression types are
-#  NONE = 0,
-#  LZSS_LBA_TYPE_1 = 1,
-#  LZSS_LBA_TYPE_2 = 2,
+enum CompressionType {
+    NONE = 0,
+    LZSS_LBA_TYPE_1 = 1,
+    LZSS_LBA_TYPE_2 = 2,
+}
 
 func decompress(file: FileAccess, entry: Dictionary) -> PackedByteArray:
     if entry["compression"] == 0:

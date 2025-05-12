@@ -8,7 +8,7 @@ var model_parser;
 var parsers_assoc;
 
 var tree;
-var tree_root;
+var console;
 
 var packages;
 var current_palette;
@@ -18,32 +18,27 @@ func _ready() -> void:
     palette_parser = load("res://parsers/palette.gd").new();
     image_parser = load("res://parsers/image.gd").new();
     sprite_parser = load("res://parsers/sprite.gd").new();
-    model_parser = load("res://parsers/model.gd").new();
-    parsers_assoc = {
-        ".HQR": package_parser,
-        ".ILE": package_parser,
-        ".OBL": package_parser,
-        ".LIM": image_parser,
-        ".PAL": palette_parser,
-        ".SPR": sprite_parser,
-        ".LFN": model_parser,
-        "Unknown": null
-    }
+    model_parser = load("res://parsers/model2.gd").new();
     current_palette = palette_parser.generate_random();
+    var palette_img = palette_parser.create_preview(current_palette);
+    get_node("Layout/MainContainer/Entry/Bottom/Palette/Image").texture = ImageTexture.create_from_image(palette_img);
+    packages = [];
+    console = get_node("Layout/MainContainer/Entry/Bottom/Console");
     # UI
-    tree = get_node("Layout/MainContainer/VBoxContainer/Tree");
-    tree_root = tree.create_item();
-    tree.hide_root = true;
+    tree = get_node("Layout/MainContainer/TreeContainer/Tree");
     tree.connect("item_selected", Callable(self, "tree_select"));
+    var collapse_button = get_node("Layout/MainContainer/TreeContainer/Toolbar/CollapseButton");
+    collapse_button.connect("pressed", Callable(tree, "collapse"));
+    var open_file_button = get_node("Layout/MainContainer/TreeContainer/Toolbar/OpenFileButton");
+    open_file_button.connect("pressed", Callable(self, "file_menu").bind(0));
     get_node("Layout/MenuBar/File").connect("id_pressed", Callable(self, "file_menu"));
     get_node("Layout/MenuBar/About").connect("id_pressed", Callable(self, "about_menu"));
-    get_node("OpenFileDialog").connect("file_selected", Callable(self, "load_package"));
+    get_node("OpenFileDialog").connect("file_selected", Callable(self, "load_package").bind(false));
     get_node("OpenFileDialog").connect("files_selected", Callable(self, "load_multiple"));
-    #Load
-    packages = [];
-    #var main_package = load_package("./data/RESS.HQR");
-    #var citadel = load_package("./data/CITADEL.ILE");
-    #var citadelo = load_package("./data/CITADEL.OBL");
+    # Debug
+    console.print("LBAExplorer v%s" % ProjectSettings.get_setting("application/config/version"), Color.GRAY, true);
+    if OS.has_feature("editor"):
+        load_multiple(["E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\RESS.HQR", "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\BODY.HQR"]);
 
 func file_menu(idx: int):
     if idx == 0:
@@ -55,74 +50,87 @@ func about_menu(idx: int):
 
 func load_multiple(files: Array[String]):
     for file in files:
-        load_package(file);
+        load_package(file, true);
 
-func load_package(path: String):
-    var package = package_parser.parse(path);
+func load_package(path: String, lazy: bool):
+    if !Utils.SUPPORTED_EXTENSIONS.has(path.get_extension()):
+        console.print("Error: '%s' Unsupported file format" % path, Color.RED);
+        return;
+    for pkg in packages:
+        if pkg.path == path:
+            console.print("'%s' already in workspace, skipping..." % path, Color.BLUE);
+            return;
+    var package = package_parser.parse(path, lazy);
+    var package_index = packages.size();
     packages.push_back(package);
-    #test
-    var tree_package = tree.create_item(tree_root);
-    tree_package.set_text(0, path.get_file());
-    for entry_index in range(0, package.entries.size()):
-        var entry = package.entries[entry_index];
-        var tree_entry = tree.create_item(tree_package);
-        var entry_text = "%d: " % (entry_index + 1);
-        if entry == null:
-            entry_text += "Blank"
-            tree_entry.set_selectable(0, false);
-        else:
-            entry_text += "%s Entry" % entry.type
-            if entry.repeats != -1:
-                entry_text += "(R%d)" % (entry.repeats + 1);
-            tree_entry.set_metadata(0, { "package_index": packages.size() - 1, "entry_index": entry_index });
-        tree_entry.set_text(0, entry_text);
-    get_node("Layout/MainContainer/VBoxContainer/Label").set_text("%d package(s) loaded" % packages.size());
-    return package;
+    if !lazy:
+        var metadata = get_lbalab_metadata(package.path.get_file(), package.entries.size());
+        if metadata:
+            package["metadata"] = metadata;
+    tree.set_package(package_index, package, lazy);
+    get_node("Layout/MainContainer/TreeContainer/Footer").set_text("%d package(s) loaded" % packages.size());
     
 func populate_details(package_index: int, entry_index: int):
+    var details = get_node("Layout/MainContainer/Entry/Bottom/Details/Text");
+    if entry_index != -1:
+        var entry = packages[package_index].entries[entry_index];
+        if entry == null:
+            return;
+        details.set_text(get_entry_details(package_index, entry_index));
+    else:
+        details.set_text("Package");
+
+func populate_viewer(package_index: int, entry_index: int):
     var entry = packages[package_index].entries[entry_index];
     if entry == null:
         return;
-    var details = get_node("Layout/MainContainer/Entry/Panel/Details");
-    details.set_text(get_entry_details(package_index, entry_index));
-    var parser = parsers_assoc[entry.type];
-    var viewport2d = get_node("Layout/MainContainer/Entry/ColorRect/SubViewport2D");
-    var viewport3d = get_node("Layout/MainContainer/Entry/ColorRect/SubViewport3D");
-    var hex_viewer = get_node("Layout/MainContainer/Entry/ColorRect/HexViewer");
-    if entry.type == ".LIM" || entry.type == ".SPR":
+    var viewport2d = get_node("Layout/MainContainer/Entry/ViewerContainer/2D");
+    viewport2d.visible = false;
+    var viewport3d = get_node("Layout/MainContainer/Entry/ViewerContainer/3D");
+    viewport3d.visible = false;
+    var hex = get_node("Layout/MainContainer/Entry/ViewerContainer/Hex");
+    hex.visible = false;
+    if entry.type == Utils.EntryType.IMAGE || entry.type == Utils.EntryType.SPRITE:
+        var parser = image_parser if entry.type == Utils.EntryType.IMAGE else sprite_parser;
         var image = parser.parse(entry, current_palette);
-        hex_viewer.visible = false;
-        viewport3d.visible = false;
         viewport2d.visible = true;
         viewport2d.reset(false);
         viewport2d.set_preview(ImageTexture.create_from_image(image));
-    elif entry.type == ".PAL":
-        var palette = parser.parse(entry);
-        var palette_img = parser.create_preview(palette);
-        hex_viewer.visible = false;
-        viewport3d.visible = false;
+    elif entry.type == Utils.EntryType.PALETTE:
+        var palette = palette_parser.parse(entry);
+        var palette_img = palette_parser.create_preview(palette);
         viewport2d.visible = true;
         viewport2d.reset(true);
         viewport2d.set_preview(ImageTexture.create_from_image(palette_img));
         viewport2d.set_zoom(Vector2(15,15));
-    elif entry.type == ".LFN":
-        var skeletonData = parser.parse(entry);
-        var skeleton = parser.build_skeleton(skeletonData);
-        hex_viewer.visible = false;
-        viewport2d.visible = false;
+    elif entry.type == Utils.EntryType.MODEL:
+        var model_data = model_parser.parse(entry);
+        var model = model_parser.build_model(model_data, current_palette);
         viewport3d.visible = true;
-        viewport3d.reset_camera();
+        viewport3d.reset();
+        viewport3d.set_preview(model);
     else:
-        viewport3d.visible = false;
-        viewport2d.visible = false;
-        hex_viewer.visible = true;
-        hex_viewer.set_data(entry);
+        hex.visible = true;
+        hex.reset();
+        hex.set_data(entry);
 
 func tree_select():
     var item = tree.get_selected();
     var meta = item.get_metadata(0);
     if meta:
-        populate_details(meta.package_index, meta.entry_index);
+        var pkg = packages[meta.package_index];
+        # Perform load for lazy loaded entries
+        if !pkg.loaded:
+            pkg = package_parser.parse_entries(pkg);
+            var metadata = get_lbalab_metadata(pkg.path.get_file(), pkg.entries.size());
+            if metadata:
+                pkg["metadata"] = metadata;
+            packages[meta.package_index] = pkg;
+            tree.call_deferred("set_package", meta.package_index, packages[meta.package_index], false);
+        # Fill data
+        if meta.entry_index != -1:
+            populate_details(meta.package_index, meta.entry_index);
+            populate_viewer(meta.package_index, meta.entry_index);
 
 func get_entry_details(package_index: int, entry_index: int):
     var entry = packages[package_index].entries[entry_index];
@@ -138,3 +146,15 @@ func set_current_palette():
     if meta:
         var entry = packages[meta.package_index].entries[meta.entry_index];
         current_palette = palette_parser.parse(entry);
+        var palette_img = palette_parser.create_preview(current_palette);
+        get_node("Layout/MainContainer/Entry/Bottom/Palette/Image").texture = ImageTexture.create_from_image(palette_img);
+
+func get_lbalab_metadata(package_file: String, package_entries_count: int):
+    for lba_version in range(1, 3):
+        var metadata_path = "res://metadata/LBA%d/HQR/%s.json" % [lba_version, package_file];
+        if FileAccess.file_exists(metadata_path):
+            var file = FileAccess.open(metadata_path, FileAccess.READ);
+            var metadata = JSON.parse_string(file.get_as_text());
+            if metadata.entries.size() == package_entries_count:
+                return metadata;
+    return null;

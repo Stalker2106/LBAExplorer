@@ -12,7 +12,7 @@ config_version=5
 
 config/name="LBAExplorer"
 config/description="LBAExplorer is a tool for browsing game package files from Little Big Adventure 1 & 2 (classic editions)."
-config/version="1.0.0"
+config/version="1.1.0"
 run/main_scene="res://App.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 boot_splash/bg_color=Color(0.0862745, 0.113725, 0.121569, 1)
@@ -24,6 +24,7 @@ config/windows_native_icon="res://assets/icon.ico"
 [autoload]
 
 Compression="*res://parsers/compression.gd"
+Utils="*res://utils.gd"
 
 [display]
 
