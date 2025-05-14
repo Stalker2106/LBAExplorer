@@ -38,7 +38,11 @@ func _ready() -> void:
     # Debug
     console.print("LBAExplorer v%s" % ProjectSettings.get_setting("application/config/version"), Color.GRAY, true);
     if OS.has_feature("editor"):
-        load_multiple(["E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\RESS.HQR", "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\BODY.HQR"]);
+        load_multiple([
+            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\RESS.HQR",
+            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\BODY.HQR",
+            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\ANIM.HQR"
+            ]);
 
 func file_menu(idx: int):
     if idx == 0:
@@ -64,7 +68,7 @@ func load_package(path: String, lazy: bool):
     var package_index = packages.size();
     packages.push_back(package);
     if !lazy:
-        var metadata = get_lbalab_metadata(package.path.get_file(), package.entries.size());
+        var metadata = get_lbalab_metadata(package.path.get_file(), package.entries_count);
         if metadata:
             package["metadata"] = metadata;
     tree.set_package(package_index, package, lazy);
@@ -121,11 +125,11 @@ func tree_select():
         var pkg = packages[meta.package_index];
         # Perform load for lazy loaded entries
         if !pkg.loaded:
-            pkg = package_parser.parse_entries(pkg);
-            var metadata = get_lbalab_metadata(pkg.path.get_file(), pkg.entries.size());
+            var metadata = get_lbalab_metadata(pkg.path.get_file(), pkg.entries_count);
             if metadata:
                 pkg["metadata"] = metadata;
             packages[meta.package_index] = pkg;
+            pkg = package_parser.parse_entries(pkg);
             tree.call_deferred("set_package", meta.package_index, packages[meta.package_index], false);
         # Fill data
         if meta.entry_index != -1:

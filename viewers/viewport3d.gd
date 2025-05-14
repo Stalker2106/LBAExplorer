@@ -8,11 +8,14 @@ var preview;
 
 var zoom_slider;
 
+const MIN_ZOOM = -5000.0;
+
 func _ready() -> void:
     camera = get_node("SubViewport3D/Viewport/Camera")
     get_node("Toolbar/ExportButton").connect("pressed", Callable(self, "export_model"));
     get_node("Toolbar/ResetButton").connect("pressed", Callable(self, "reset").bind(true));
     zoom_slider = get_node("SubViewport3D/Viewport/CanvasLayer/ZoomSlider/VSlider");
+    zoom_slider.min_value = MIN_ZOOM;
     dragging = false;
     rotating = false;
 
@@ -37,7 +40,7 @@ func reset(keep_preview: bool = false):
         preview.queue_free();
     elif keep_preview:
         preview.rotation = Vector3.ZERO;        
-    camera.position = Vector3(0, 2.5, 10);
+    camera.position = Vector3(0, 20, 20);
     zoom_slider.value = -10;
 
 func set_preview(model: Node3D):
@@ -58,6 +61,6 @@ func export_model():
     gltf_document.write_to_filesystem(gltf_state, export_path);
 
 func update_zoom(value: float):
-    zoom_slider.value = clamp(zoom_slider.value + value, -50.0, 0.0);
+    zoom_slider.set_value(zoom_slider.value + value);
     camera.position.z = -zoom_slider.value;
     

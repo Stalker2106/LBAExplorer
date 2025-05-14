@@ -4,11 +4,14 @@ const image_parser = preload("res://parsers/image.gd");
 
 # Parses HQR, ILE or OBL packages
 func parse(path: String, lazy: bool):
-    if !FileAccess.file_exists(path):
-        return null;
+    var file := FileAccess.open(path, FileAccess.READ)
+    if file == null:
+        Utils.console.print("Error: unable to open file: " + path, Color.RED);
+        return {}
     var package := {
         "path": path,
         "entries": [],
+        "entries_count": int(file.get_32() / 4) - 1,
         "loaded": false
     }
     if !lazy:
@@ -18,7 +21,7 @@ func parse(path: String, lazy: bool):
 func parse_entries(package):
     var file := FileAccess.open(package.path, FileAccess.READ)
     if file == null:
-        push_error("Unable to open file: " + package.path)
+        Utils.console.print("Error: unable to open file: " + package.path, Color.RED);
         return {}
     var file_size = file.get_length();
     file.seek(0)
@@ -42,13 +45,17 @@ func parse_entries(package):
                 "compression": file.get_16() as Compression.CompressionType,
                 "repeats": package["entries"].find_custom(func (pkg): return pkg && pkg.offset == offset)
             }
-            entry["data"] = Compression.decompress(file, entry)
-            entry["type"] = detect_entry_type(entry);
+            entry["data"] = Compression.decompress(file, entry);
+            entry["type"] = detect_entry_type(package, i, entry);
         package["entries"].append(entry)
     package["loaded"] = true;
     return package;
 
-func detect_entry_type(entry: Dictionary):
+func detect_entry_type(package: Dictionary, entry_index: int, entry: Dictionary):
+    if package.has("metadata") && package.metadata.entries[entry_index]:
+        match package.metadata.entries[entry_index].type:
+            "animation":
+                return Utils.EntryType.ANIMATION;
     if entry.original_size in image_parser.sizes:
         return Utils.EntryType.IMAGE;
     elif entry.original_size == 768:
@@ -57,4 +64,6 @@ func detect_entry_type(entry: Dictionary):
         return Utils.EntryType.SPRITE;
     elif (entry.data[0] == 16 && entry.data[4] == 96) || (entry.data[0] == 4 && entry.data[1] == 4):
         return Utils.EntryType.MODEL;
+    elif ([32, 44, 60, 64, 100, 120, 140, 144, 160, 180, 200, 240].has(entry.data[8])) && (entry.data[9] == 0 || entry.data[9] == 1):
+        return Utils.EntryType.ANIMATION;
     return Utils.EntryType.UNKNOWN;

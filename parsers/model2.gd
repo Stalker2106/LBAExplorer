@@ -1,7 +1,5 @@
 extends Node
 
-const SCALE = 1 / 32.0;
-
 func parse(entry: Dictionary) -> Dictionary:
     var sdata = StreamPeerBuffer.new();
     sdata.data_array = entry.data;
@@ -31,7 +29,7 @@ func parse(entry: Dictionary) -> Dictionary:
     for i in range(0, bones_count):
         var bone = {
             "parent_bone": sdata.get_u16(),
-            "vert_index": sdata.get_u16()
+            "vertex_index": sdata.get_u16()
         }
         sdata.get_u16() # dummy
         sdata.get_u16() # dummy
@@ -41,7 +39,7 @@ func parse(entry: Dictionary) -> Dictionary:
     sdata.seek(vertices_offset);
     for i in range(0, vertices_count):
         var vert = {
-            "position": Vector3(sdata.get_16(), sdata.get_16(), sdata.get_16()),
+            "position": Vector3(sdata.get_16(), sdata.get_16(), sdata.get_16()) * Utils.WORLD_SCALE,
             "bone": sdata.get_u16()
         }
         vertices.push_back(vert);
@@ -79,7 +77,7 @@ func parse(entry: Dictionary) -> Dictionary:
         var sphere = {
             "color_index": sdata.get_u8(),
             "vertex_index": sdata.get_u16(),
-            "size": sdata.get_u8(),
+            "size": sdata.get_u8() * Utils.WORLD_SCALE,
         }
         sdata.get_u8() # dummy
         spheres.push_back(sphere);
@@ -152,98 +150,119 @@ func parse_mesh(sdata: StreamPeerBuffer):
     sdata.seek(mesh_offset + mesh.size);
     return mesh;
 
-func build_skeleton(data: Dictionary):
-    var skeleton = Skeleton3D.new();
-    # Add all bones
-    for bone_index in range(0, data.bones.size()):
-        skeleton.add_bone("Bone%d" % bone_index);
-    # Configure bones
-    for bone_index in range(0, data.bones.size()):
-        skeleton.set_bone_parent(bone_index, data.bones[bone_index].parent_bone);
-        skeleton.set_bone_pose_position(bone_index, data.bones[bone_index].vert);
-    return skeleton;
+func add_vertex(st: SurfaceTool, node, vertices: Array, normals: Array, vertex_index: int):
+    if vertex_index > vertices.size():
+        Utils.console.print("Error: vertex index %d is invalid" % vertex_index, Color.RED);
+        return;
+    st.set_normal(normals[vertex_index]);
+    if node is Skeleton3D:
+        var bone_id = vertices[vertex_index].bone;
+        var bone_rest_transform = node.get_bone_rest(bone_id);
+        st.set_weights([1.0, 0.0, 0.0, 0.0]);
+        st.set_bones([bone_id, 0, 0, 0]);
+        st.add_vertex(bone_rest_transform.origin + vertices[vertex_index].position);
+    else:
+        st.add_vertex(vertices[vertex_index].position);
 
 func build_model(data: Dictionary, palette: Array[Color]) -> Node3D:
     var node = null;
     if data.bones.size() > 0:
         node = Skeleton3D.new();
+        node.show_rest_only = true;
+        # Add bones if necessary
+        for bone_id in range(0, data.bones.size()):
+            node.add_bone("bone%02d" % bone_id);
+        for bone_id in range(0, data.bones.size()):
+            var bone = data.bones[bone_id];
+            var rest_pos = data.vertices[bone.vertex_index].position
+            if bone.parent_bone != 0xFFFF:
+                node.set_bone_parent(bone_id, bone.parent_bone);
+                var parent_rest_transform = node.get_bone_rest(bone.parent_bone);
+                rest_pos += parent_rest_transform.origin;
+            node.set_bone_rest(bone_id, Transform3D(Basis.IDENTITY, rest_pos));
     else:
         node = Node3D.new();
-    node.scale = Vector3(SCALE, SCALE, SCALE);
     # Build model
-    var poly_surf_tools = {};
+    var surf_tools = {};
     for mesh in data.meshes:
         for face in mesh.faces:
             var mat_name = "%d" % face.color_index;
             var st = null;
-            if !poly_surf_tools.has(mat_name):
+            if !surf_tools.has(mat_name):
                 st = SurfaceTool.new();
                 st.begin(Mesh.PRIMITIVE_TRIANGLES);
                 var mat = StandardMaterial3D.new();
                 mat.albedo_color = palette[face.color_index];
                 mat.cull_mode = BaseMaterial3D.CULL_DISABLED;
                 st.set_material(mat);
-                poly_surf_tools[mat_name] = st;
-            st = poly_surf_tools[mat_name];
-            if face.vertex_index_0 > data.vertices.size() || face.vertex_index_1 > data.vertices.size() \
-                || face.vertex_index_2 > data.vertices.size():
-                Utils.console.print("Error: invalid vertex index in face", Color.RED);
-                continue;
-            st.add_vertex(data.vertices[face.vertex_index_0].position);
-            st.add_vertex(data.vertices[face.vertex_index_1].position);
-            st.add_vertex(data.vertices[face.vertex_index_2].position);
+                surf_tools[mat_name] = st;
+            st = surf_tools[mat_name];
+            add_vertex(st, node, data.vertices, data.normals, face.vertex_index_0);
+            add_vertex(st, node, data.vertices, data.normals, face.vertex_index_1);
+            add_vertex(st, node, data.vertices, data.normals, face.vertex_index_2);
             # Handle quads
             if face.has("vertex_index_3"):
-                if face.vertex_index_3 > data.vertices.size():
-                    Utils.console.print("Error: invalid vertex index in face", Color.RED);
-                    continue;
-                st.add_vertex(data.vertices[face.vertex_index_0].position);
-                st.add_vertex(data.vertices[face.vertex_index_2].position);
-                st.add_vertex(data.vertices[face.vertex_index_3].position);
-    for mat in poly_surf_tools.keys():
-        var poly_mesh_instance = MeshInstance3D.new();
-        poly_mesh_instance.mesh = poly_surf_tools[mat].commit();
-        node.add_child(poly_mesh_instance);
+                add_vertex(st, node, data.vertices, data.normals, face.vertex_index_0);
+                add_vertex(st, node, data.vertices, data.normals, face.vertex_index_2);
+                add_vertex(st, node, data.vertices, data.normals, face.vertex_index_3);
     # Build edges
-    var edge_surf_tools = {};
     for edge in data.edges:
-        var mat_name = "%d" % edge.color_index;
+        var mat_name = "%d_edge" % edge.color_index;
         var st = null;
-        if !edge_surf_tools.has(mat_name):
+        if !surf_tools.has(mat_name):
             st = SurfaceTool.new();
             st.begin(Mesh.PRIMITIVE_LINES);
             var mat = StandardMaterial3D.new();
             mat.albedo_color = palette[edge.color_index];
             mat.cull_mode = BaseMaterial3D.CULL_DISABLED;
             st.set_material(mat);
-            edge_surf_tools[mat_name] = st;
-        st = edge_surf_tools[mat_name];
+            surf_tools[mat_name] = st;
+        st = surf_tools[mat_name];
         if edge.vertex_index_0 > data.vertices.size() || edge.vertex_index_1 > data.vertices.size():
             Utils.console.print("Error: invalid vertex index in edge", Color.RED);
             continue;
-        st.add_vertex(data.vertices[edge.vertex_index_0].position);
-        st.add_vertex(data.vertices[edge.vertex_index_1].position);
-    for mat in edge_surf_tools.keys():
-        var edge_mesh_instance = MeshInstance3D.new();
-        edge_mesh_instance.mesh = edge_surf_tools[mat].commit();
-        node.add_child(edge_mesh_instance);
+        add_vertex(st, node, data.vertices, data.normals, edge.vertex_index_0);
+        add_vertex(st, node, data.vertices, data.normals, edge.vertex_index_1);
     # Build spheres
     for sphere in data.spheres:
-        var mesh_instance = MeshInstance3D.new();
-        if sphere.vertex_index > data.vertices.size():
-            Utils.console.print("Error: invalid vertex index for sphere", Color.RED);
-            continue;
-        mesh_instance.position = data.vertices[sphere.vertex_index].position;
-        var sphere_mesh = SphereMesh.new();
-        sphere_mesh.radial_segments = 8;
-        sphere_mesh.rings = 8;
-        sphere_mesh.radius = sphere.size / 2;
-        sphere_mesh.height = sphere.size;
-        mesh_instance.mesh = sphere_mesh;
-        var mat = StandardMaterial3D.new();
-        mat.albedo_color = palette[sphere.color_index];
-        mat.cull_mode = BaseMaterial3D.CULL_DISABLED;
-        sphere_mesh.set_material(mat);
-        node.add_child(mesh_instance);
+        # Build sphere
+        var base_sphere := SphereMesh.new()
+        base_sphere.radial_segments = 8;
+        base_sphere.rings = 8;
+        base_sphere.radius = sphere.size;
+        base_sphere.height = sphere.size;
+        var sphere_vertex = data.vertices[sphere.vertex_index];
+        # Create surface tool
+        var mat_name = "%d_sphere" % sphere.color_index;
+        var st = null;
+        if !surf_tools.has(mat_name):
+            st = SurfaceTool.new();
+            st.begin(Mesh.PRIMITIVE_TRIANGLES);
+            var mat = StandardMaterial3D.new();
+            mat.albedo_color = palette[sphere.color_index];
+            mat.cull_mode = BaseMaterial3D.CULL_DISABLED;
+            st.set_material(mat);
+            surf_tools[mat_name] = st;
+        st = surf_tools[mat_name];
+        # Convert procedural spheremesh to sftool
+        var arrays = base_sphere.get_mesh_arrays();
+        var positions = arrays[Mesh.ARRAY_VERTEX];
+        var normals = arrays[Mesh.ARRAY_NORMAL];
+        var indices = arrays[Mesh.ARRAY_INDEX]
+        var base_vertices = data.vertices.size();
+        for i in range(0, positions.size()):
+            data.vertices.push_back({"position": sphere_vertex.position + positions[i], "bone": sphere_vertex.bone})
+            data.normals.push_back(normals[i]);
+        for i in range(0, indices.size() - 2, 3):
+            add_vertex(st, node, data.vertices, data.normals, indices[i] + base_vertices);
+            add_vertex(st, node, data.vertices, data.normals, indices[i + 1] + base_vertices);
+            add_vertex(st, node, data.vertices, data.normals, indices[i + 2] + base_vertices);
+    # Build mesh
+    var mesh = null;
+    var mesh_instance = MeshInstance3D.new();
+    for mat in surf_tools.keys():
+        mesh = surf_tools[mat].commit(mesh);
+    mesh_instance.mesh = mesh;
+    node.add_child(mesh_instance);
     return node;
         
