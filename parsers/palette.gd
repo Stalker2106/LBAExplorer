@@ -10,10 +10,10 @@ func parse(entry: Dictionary) -> Array[Color]:
         palette.push_back(Color(entry.data[i] / 255.0, entry.data[i + 1] / 255.0, entry.data[i + 2] / 255.0));
     return palette;
 
-func generate_random() -> Array[Color]:
+func generate_grayscale() -> Array[Color]:
     var palette : Array[Color] = [];
     for i in range(0, 256):
-        palette.push_back(Color(randf_range(0.0, 1.0), randf_range(0.0, 1.0), randf_range(0.0, 1.0)));
+        palette.push_back(Color((i % 16) / 16.0, (i % 16) / 16.0, (i % 16) / 16.0));
     return palette;
 
 const palette_width = 32;

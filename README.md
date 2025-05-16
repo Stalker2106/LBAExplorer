@@ -18,11 +18,14 @@
 
 👁️ **Built-in viewers**:
   - **2D Viewer**: for sprites and images.
+    - 🚧LBA1 specific formats are not supported yet
+    - 🚧Isometric rooms are not supported yet
     - Support for palette mapping from any source
     - Export any texture to png
   - **3D Viewer**: for models and animations.
     - Export any model to glb/gltf
-    - 🚧LBA1 models are not supported yet
+    - 🚧LBA1 specific formats are not supported yet
+    - 🚧3D islands are not supported yet
     - 🚧Animations are not supported yet
     - 🚧Texture mapping is not supported yet
     - 🚧Skeleton rigging is not supported yet

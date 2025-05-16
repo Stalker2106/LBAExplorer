@@ -3,11 +3,11 @@ extends Node
 const image_parser = preload("res://parsers/image.gd");
 
 # Parses HQR, ILE or OBL packages
-func parse(path: String, lazy: bool):
+func parse(path: String, package_index: int, lazy: bool):
     var file := FileAccess.open(path, FileAccess.READ)
     if file == null:
         Utils.console.print("Error: unable to open file: " + path, Color.RED);
-        return {}
+        return null;
     var package := {
         "path": path,
         "entries": [],
@@ -15,16 +15,16 @@ func parse(path: String, lazy: bool):
         "loaded": false
     }
     if !lazy:
-        return parse_entries(package);
+        return parse_entries(package_index, package);
     return package;
 
-func parse_entries(package):
+func parse_entries(package_index: int, package):
     var file := FileAccess.open(package.path, FileAccess.READ)
     if file == null:
         Utils.console.print("Error: unable to open file: " + package.path, Color.RED);
-        return {}
+        return null;
     var file_size = file.get_length();
-    file.seek(0)
+    file.seek(0);
     var entries_offsets : Array[int] = []
     entries_offsets.append(file.get_32())
 
@@ -33,8 +33,8 @@ func parse_entries(package):
         entries_offsets.append(file.get_32())
 
     # Parse package entries
-    for i in entries_count:
-        var offset := entries_offsets[i]
+    for entry_index in entries_count:
+        var offset := entries_offsets[entry_index]
         var entry = null;
         if offset != 0 && offset < file_size:
             file.seek(offset)
@@ -46,7 +46,10 @@ func parse_entries(package):
                 "repeats": package["entries"].find_custom(func (pkg): return pkg && pkg.offset == offset)
             }
             entry["data"] = Compression.decompress(file, entry);
-            entry["type"] = detect_entry_type(package, i, entry);
+            entry["type"] = detect_entry_type(package, entry_index, entry);
+            # Register if anim
+            if entry["type"] == Utils.EntryType.ANIMATION:
+                Engine.get_main_loop().root.get_node("/root/App").animations.push_back({"package_index": package_index, "entry_index": entry_index})
         package["entries"].append(entry)
     package["loaded"] = true;
     return package;

@@ -81,7 +81,7 @@ func parse(entry: Dictionary) -> Dictionary:
         }
         sdata.get_u8() # dummy
         spheres.push_back(sphere);
-    # Parse textures
+    # Parse uvs
     var uvs = []
     sdata.seek(uv_offset);
     for i in range(0, uv_count):
@@ -131,7 +131,7 @@ func parse_mesh(sdata: StreamPeerBuffer):
                 face["vertex_index_%d" % v] = sdata.get_u16();
             # If it has a triangulated texture
             if has_texture && vertex_count == 3:
-                sdata.get_u8(); # should not be dummy
+                face["texture"] = sdata.get_u8();
                 sdata.get_u8(); # dummy
             else:
                 sdata.get_u16(); # dummy
@@ -144,7 +144,7 @@ func parse_mesh(sdata: StreamPeerBuffer):
                     face["v_%d" % v] = sdata.get_u8();
                 # for blocksize 32 with quad texture
                 if vertex_count == 4:
-                    sdata.get_u8(); # should not be dummy
+                    face["texture"] = sdata.get_u8(); # should not be dummy
             faces.push_back(face);
     mesh["faces"] = faces;
     sdata.seek(mesh_offset + mesh.size);
@@ -168,6 +168,7 @@ func build_model(data: Dictionary, palette: Array[Color]) -> Node3D:
     var node = null;
     if data.bones.size() > 0:
         node = Skeleton3D.new();
+        node.name = "Skeleton";
         node.show_rest_only = true;
         # Add bones if necessary
         for bone_id in range(0, data.bones.size()):
@@ -182,6 +183,7 @@ func build_model(data: Dictionary, palette: Array[Color]) -> Node3D:
             node.set_bone_rest(bone_id, Transform3D(Basis.IDENTITY, rest_pos));
     else:
         node = Node3D.new();
+        node.name = "Model";
     # Build model
     var surf_tools = {};
     for mesh in data.meshes:
@@ -230,7 +232,7 @@ func build_model(data: Dictionary, palette: Array[Color]) -> Node3D:
         base_sphere.radial_segments = 8;
         base_sphere.rings = 8;
         base_sphere.radius = sphere.size;
-        base_sphere.height = sphere.size;
+        base_sphere.height = sphere.size * 2;
         var sphere_vertex = data.vertices[sphere.vertex_index];
         # Create surface tool
         var mat_name = "%d_sphere" % sphere.color_index;

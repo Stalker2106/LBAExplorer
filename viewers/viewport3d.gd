@@ -1,19 +1,25 @@
 extends Control
 
-var camera;
 var dragging;
 var rotating;
 
+var camera;
+var camera_pivot;
 var preview;
+var animation_player;
 
+var anim_dropdown;
 var zoom_slider;
 
 const MIN_ZOOM = -5000.0;
 
 func _ready() -> void:
-    camera = get_node("SubViewport3D/Viewport/Camera")
+    camera_pivot = get_node("SubViewport3D/Viewport/CameraPivot");
+    camera = get_node("SubViewport3D/Viewport/CameraPivot/Camera")
     get_node("Toolbar/ExportButton").connect("pressed", Callable(self, "export_model"));
     get_node("Toolbar/ResetButton").connect("pressed", Callable(self, "reset").bind(true));
+    anim_dropdown = get_node("SubViewport3D/Viewport/CanvasLayer/AnimationsDropdown");
+    anim_dropdown.connect("item_selected", Callable(self, "apply_anim"));
     zoom_slider = get_node("SubViewport3D/Viewport/CanvasLayer/ZoomSlider/VSlider");
     zoom_slider.min_value = MIN_ZOOM;
     dragging = false;
@@ -31,20 +37,42 @@ func _gui_input(event: InputEvent) -> void:
             update_zoom(-3);
     if event is InputEventMouseMotion:
         if dragging:
-            camera.position -= Vector3(event.relative.x / 100.0 , -event.relative.y / 100.0 , 0);
+            camera_pivot.position -= Vector3(event.relative.x / 100.0 , -event.relative.y / 100.0 , 0);
         if rotating:
-            preview.rotation += Vector3(event.relative.y / 100.0 , event.relative.x / 100.0 , 0);
+            camera_pivot.rotation -= Vector3(event.relative.y / 100.0 , event.relative.x / 100.0 , 0);
 
 func reset(keep_preview: bool = false):
     if !keep_preview && preview:
         preview.queue_free();
-    elif keep_preview:
-        preview.rotation = Vector3.ZERO;        
-    camera.position = Vector3(0, 20, 20);
+    camera_pivot.rotation = Vector3.ZERO;
+    camera_pivot.position = Vector3.ZERO;
+    camera.position = Vector3(0, 10, 10);
     zoom_slider.value = -10;
+    populate_anims();
+
+func populate_anims():
+    var anims = get_node("/root/App").animations;
+    anim_dropdown.add_item("None");
+    for anim_id in range(0, anims.size()):
+        anim_dropdown.add_item("Anim%02d" % anim_id);
+            
+func apply_anim(selected_idx: int):
+    var anim_id = selected_idx - 1;
+    if anim_id < 0:
+        return; #None selected
+    var anim_meta = get_node("/root/App").animations[anim_id];
+    var anim_entry = get_node("/root/App").packages[anim_meta.package_index].entries[anim_meta.entry_index];
+    var anim_parser = load("res://parsers/anim.gd").new();
+    var anim = anim_parser.build_anim(anim_parser.parse(anim_entry));
+    var anim_library = AnimationLibrary.new();
+    anim_library.add_animation("Anim_%02d" % anim_id, anim);
+    animation_player.add_animation_library("lib", anim_library);
+    
 
 func set_preview(model: Node3D):
     preview = model;
+    animation_player = AnimationPlayer.new();
+    preview.add_child(animation_player);
     get_node("SubViewport3D/Viewport").add_child(preview);
 
 func export_model():

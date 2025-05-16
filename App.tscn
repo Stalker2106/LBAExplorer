@@ -186,8 +186,10 @@ handle_input_locally = false
 size = Vector2i(2, 2)
 render_target_update_mode = 0
 
-[node name="Camera" type="Camera3D" parent="Layout/MainContainer/Entry/ViewerContainer/3D/SubViewport3D/Viewport"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.26146)
+[node name="CameraPivot" type="Node3D" parent="Layout/MainContainer/Entry/ViewerContainer/3D/SubViewport3D/Viewport"]
+
+[node name="Camera" type="Camera3D" parent="Layout/MainContainer/Entry/ViewerContainer/3D/SubViewport3D/Viewport/CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 10)
 environment = SubResource("Environment_kptjc")
 fov = 120.0
 near = 0.01
@@ -230,6 +232,14 @@ editable = false
 layout_mode = 2
 texture = ExtResource("13_kdca3")
 stretch_mode = 5
+
+[node name="AnimationsDropdown" type="OptionButton" parent="Layout/MainContainer/Entry/ViewerContainer/3D/SubViewport3D/Viewport/CanvasLayer"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_right = 32.0
+grow_vertical = 0
 
 [node name="Hex" type="VBoxContainer" parent="Layout/MainContainer/Entry/ViewerContainer"]
 visible = false

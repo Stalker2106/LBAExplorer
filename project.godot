@@ -34,6 +34,7 @@ window/size/window_width_override=1200
 window/size/window_height_override=700
 window/energy_saving/keep_screen_on=false
 window/subwindows/embed_subwindows=false
+window/per_pixel_transparency/allowed=true
 
 [rendering]
 

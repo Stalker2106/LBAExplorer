@@ -12,6 +12,7 @@ var console;
 
 var packages;
 var current_palette;
+var animations;
 
 func _ready() -> void:
     package_parser = load("res://parsers/package.gd").new();
@@ -19,10 +20,11 @@ func _ready() -> void:
     image_parser = load("res://parsers/image.gd").new();
     sprite_parser = load("res://parsers/sprite.gd").new();
     model_parser = load("res://parsers/model2.gd").new();
-    current_palette = palette_parser.generate_random();
+    current_palette = palette_parser.generate_grayscale();
     var palette_img = palette_parser.create_preview(current_palette);
     get_node("Layout/MainContainer/Entry/Bottom/Palette/Image").texture = ImageTexture.create_from_image(palette_img);
     packages = [];
+    animations = [];
     console = get_node("Layout/MainContainer/Entry/Bottom/Console");
     # UI
     tree = get_node("Layout/MainContainer/TreeContainer/Tree");
@@ -41,7 +43,9 @@ func _ready() -> void:
         load_multiple([
             "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\RESS.HQR",
             "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\BODY.HQR",
-            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\ANIM.HQR"
+            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\ANIM.HQR",
+            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\SPRITES.HQR",
+            "E:\\SteamLibrary\\steamapps\\common\\Little Big Adventure 2\\Common\\SPRIRAW.HQR"
             ]);
 
 func file_menu(idx: int):
@@ -59,13 +63,16 @@ func load_multiple(files: Array[String]):
 func load_package(path: String, lazy: bool):
     if !Utils.SUPPORTED_EXTENSIONS.has(path.get_extension()):
         console.print("Error: '%s' Unsupported file format" % path, Color.RED);
-        return;
+        return null;
     for pkg in packages:
         if pkg.path == path:
             console.print("'%s' already in workspace, skipping..." % path, Color.BLUE);
-            return;
-    var package = package_parser.parse(path, lazy);
+            return null;
     var package_index = packages.size();
+    var package = package_parser.parse(path, package_index, lazy);
+    if package == null:
+        console.print("Error: parsing '%s'" % path, Color.RED);
+        return null;
     packages.push_back(package);
     if !lazy:
         var metadata = get_lbalab_metadata(package.path.get_file(), package.entries_count);
@@ -94,9 +101,15 @@ func populate_viewer(package_index: int, entry_index: int):
     viewport3d.visible = false;
     var hex = get_node("Layout/MainContainer/Entry/ViewerContainer/Hex");
     hex.visible = false;
-    if entry.type == Utils.EntryType.IMAGE || entry.type == Utils.EntryType.SPRITE:
-        var parser = image_parser if entry.type == Utils.EntryType.IMAGE else sprite_parser;
-        var image = parser.parse(entry, current_palette);
+    if entry.type == Utils.EntryType.IMAGE:
+        var image = image_parser.parse(entry, current_palette);
+        viewport2d.visible = true;
+        viewport2d.reset(false);
+        viewport2d.set_preview(ImageTexture.create_from_image(image));
+    elif entry.type == Utils.EntryType.SPRITE:
+        var image = sprite_parser.parse_raw(entry, current_palette);
+        if !image:
+            image = sprite_parser.parse(entry, current_palette);
         viewport2d.visible = true;
         viewport2d.reset(false);
         viewport2d.set_preview(ImageTexture.create_from_image(image));
@@ -129,7 +142,7 @@ func tree_select():
             if metadata:
                 pkg["metadata"] = metadata;
             packages[meta.package_index] = pkg;
-            pkg = package_parser.parse_entries(pkg);
+            pkg = package_parser.parse_entries(meta.package_index, pkg);
             tree.call_deferred("set_package", meta.package_index, packages[meta.package_index], false);
         # Fill data
         if meta.entry_index != -1:
